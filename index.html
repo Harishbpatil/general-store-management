@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>General Store Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  </head>
+  <body>
+    <h2>Add Item</h2>
+    <label for="itemName">Item Name:</label>
+    <input type="text" id="itemName" />
+
+    <label for="itemDesc">Description:</label>
+    <input type="text" id="itemDesc" />
+
+    <label for="itemPrice">Price:</label>
+    <input type="number" id="itemPrice" />
+
+    <label for="itemQuantity">Quantity:</label>
+    <input type="number" id="itemQuantity" />
+
+    <button onclick="addItem()">Add Item</button>
+
+    <h2>Item List</h2>
+    <ul id="itemList"></ul>
+
+    <script>
+      // CRUD API endpoint
+      const CRUD_API_ENDPOINT =
+        "https://crudcrud.com/api/5b712f946b7a4edebc5e39feabfeb59a";
+      // Array to store items
+      const storedItems = [];
+
+      // Fetch items from CRUD API on page load
+      fetchItems();
+
+      // Function to fetch items from the API
+      function fetchItems() {
+        axios
+          .get(CRUD_API_ENDPOINT)
+          .then((response) => {
+            storedItems.length = 0; // Clear existing items
+            storedItems.push(...response.data);
+            renderItems();
+          })
+          .catch((error) => console.error("Error fetching items:", error));
+      }
+
+      // Function to add a new item
+      function addItem() {
+        // Get input values
+        const itemName = document.getElementById("itemName").value;
+        const itemDesc = document.getElementById("itemDesc").value;
+        const itemPrice = document.getElementById("itemPrice").value;
+        const itemQuantity = document.getElementById("itemQuantity").value;
+
+        // Check if all fields are filled
+        if (itemName && itemDesc && itemPrice && itemQuantity) {
+          // Create a new item object
+          const newItem = {
+            name: itemName,
+            description: itemDesc,
+            price: parseFloat(itemPrice), // Parse as float
+            quantity: parseInt(itemQuantity),
+          };
+
+          // Add the new item to the API using PUT
+          axios
+            .put(CRUD_API_ENDPOINT, newItem)
+            .then(() => {
+              storedItems.push(newItem);
+              renderItems();
+              // Clear input fields
+              clearInputFields();
+            })
+            .catch((error) => console.error("Error adding item:", error));
+        }
+      }
+
+      // Function to render items in the list
+      function renderItems() {
+        const itemList = document.getElementById("itemList");
+        itemList.innerHTML = storedItems
+          .map((item) => renderItem(item))
+          .join("");
+      }
+
+      // Function to render a single item
+      function renderItem(item) {
+        return `<li>${item.name} - ${item.description} - Quantity: ${item.quantity} <button onclick="buyItem('${item._id}', 1)">Buy 1</button> <button onclick="buyItem('${item._id}', 2)">Buy 2</button></li>`;
+      }
+
+      // Function to perform a buy operation on an item
+      function buyItem(itemId, quantity = 1) {
+        const itemIndex = storedItems.findIndex((item) => item._id === itemId);
+
+        if (itemIndex !== -1) {
+          // Update quantity locally
+          storedItems[itemIndex].quantity -= quantity;
+
+          // Update quantity on the API
+          axios
+            .put(`${CRUD_API_ENDPOINT}/${itemId}`, {
+              quantity: storedItems[itemIndex].quantity,
+            })
+            .then(() => {
+              // If quantity becomes 0 or less, remove the item
+              if (storedItems[itemIndex].quantity <= 0) {
+                storedItems.splice(itemIndex, 1);
+              }
+              renderItems();
+            })
+            .catch((error) => console.error("Error updating item:", error));
+        }
+      }
+
+      // Function to clear input fields
+      function clearInputFields() {
+        document.getElementById("itemName").value = "";
+        document.getElementById("itemDesc").value = "";
+        document.getElementById("itemPrice").value = "";
+        document.getElementById("itemQuantity").value = "";
+      }
+    </script>
+  </body>
+</html>
