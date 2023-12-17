@@ -6,170 +6,198 @@
     <title>Document</title>
   </head>
   <body>
-    <form action="" onsubmit="saveToLocalStorage(event)">
-      <label>Item Name</label>
-      <input type="text" name="Itemname" />
-      <label>Description</label>
-      <input type="text" name="description" id="" />
-      <label>Price</label>
-      <input type="text" name="price" id="" />
-      <label>Quantity</label>
-      <input type="number" name="Quantity" id="" />
-      <button>Add Item</button>
-    </form>
-    <ul id="list"></ul>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.19.0/axios.min.js"></script>
+    <h2>Welcome to General store</h2>
+    <div class="addItem">
+      <form>
+        <label for="item-name">Item Name</label>
+        <input type="text" name="item-name" id="item-name" required />
+
+        <label for="item-description">Description</label>
+        <input
+          type="text"
+          name="item-description"
+          id="item-description"
+          required
+        />
+
+        <label for="item-price">Price</label>
+        <input type="number" name="item-price" id="item-price" required />
+
+        <label for="item-qty">Quantity</label>
+        <input type="number" name="item-qty" id="item-qty" required />
+
+        <button type="submit">Add Item</button>
+      </form>
+    </div>
+    <div class="display">
+      <ul></ul>
+    </div>
+    <script src="https://unpkg.com/axios@1.1.2/dist/axios.min.js"></script>
     <script>
-      function saveToLocalStorage(event) {
-        event.preventDefault();
-        const Itemname = event.target.Itemname.value;
-        const description = event.target.description.value;
-        const price = event.target.price.value;
-        const Quantity = event.target.Quantity.value;
-
-        const obj = {
-          Iname: Itemname,
-          Description: description,
-          price: price,
-          Quantity: Quantity,
-        };
-
-        axios
-          .post(
-            "https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData",
-            obj
-          )
-          .then((res) => {
-            showOnScreen(res.data);
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      }
-
-      window.addEventListener("DOMContentLoaded", () => {
-        axios
-          .get(
-            "https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData"
-          )
-          .then((res) => {
-            console.log(res);
-            for (let i = 0; i < res.data.length; i++) {
-              showOnScreen(res.data[i]);
-            }
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+      const axiosInstance = axios.create({
+        baseURL:
+          "https://crudcrud.com/api/9456874c54854e1bb45c953105537688/generalstore",
       });
+      let ul = document.querySelector(".display ul");
 
-      function showOnScreen(obj) {
-        let ele = document.getElementById("list");
+      window.addEventListener("load", renderElements);
 
-        ele.innerHTML += `<div id=${obj._id}>
-          <li>${obj.Iname}-${obj.Description}-${obj.price}-${obj.Quantity}</li>
-          <button id=${obj._id} onclick="deletes('${obj._id}')">delete</button>
-          <button id=${obj._id} onclick="Buy1('${obj._id}')">Buy 1</button>
-          <button id=${obj._id} onclick="Buy2('${obj._id}')">Buy 2</button>
-          <button id=${obj._id} onclick="Buy3('${obj._id}')">Buy 3</button>
-        </div>`;
+      document
+        .querySelector(".addItem form")
+        .addEventListener("submit", handleSubmit);
+
+      ul.addEventListener("click", handleClick);
+
+      function createLi(data, id) {
+        let li = document.createElement("li");
+        const text = document.createElement("div");
+
+        text.textContent = `Item name : ${data["item-name"]} Description : ${data["item-description"]} Price : ${data["item-price"]} Quantity : `;
+        let span = document.createElement("span");
+        span.textContent = `${data["item-qty"]}`;
+        li.appendChild(text);
+        li.appendChild(span);
+
+        const buttons = document.createElement("div");
+
+        const buy1 = document.createElement("button");
+        buy1.classList.add("buy1");
+        buy1.textContent = "Buy1";
+        buy1.id = id;
+
+        const buy2 = document.createElement("button");
+        buy2.classList.add("buy2");
+        buy2.textContent = "Buy2";
+        buy2.id = id;
+
+        const buy3 = document.createElement("button");
+        buy3.classList.add("buy3");
+        buy3.textContent = "Buy3";
+        buy3.id = id;
+
+        buttons.appendChild(buy1);
+        buttons.appendChild(buy2);
+        buttons.appendChild(buy3);
+        li.appendChild(buttons);
+
+        return li;
       }
 
-      function Buy1(itemId) {
-        axios
-          .get(
-            `https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData/${itemId}`
-          )
-          .then((res) => {
-            let pureData = res.data;
-            axios
-              .put(
-                `https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData/${itemId}`,
-                {
-                  Iname: pureData.Iname,
-                  Description: pureData.Description,
-                  price: pureData.price,
-                  Quantity: parseInt(pureData.Quantity) - 1,
-                }
+      async function handleSubmit(e) {
+        try {
+          e.preventDefault();
+
+          const itemName = e.target["item-name"].value.trim();
+          console.log(typeof itemName);
+          const itemDesc = e.target["item-description"].value.trim();
+          const itemPrice = e.target["item-price"].value;
+          console.log(typeof itemPrice);
+          const itemQty = e.target["item-qty"].value;
+
+          if (
+            itemName.trim().length === 0 ||
+            itemDesc.trim().length === 0 ||
+            Number(itemPrice) <= 0 ||
+            Number(itemQty) <= 0
+          ) {
+            alert("Wrong input");
+          } else {
+            const data = {
+              "item-name": itemName,
+              "item-description": itemDesc,
+              "item-price": itemPrice,
+              "item-qty": itemQty,
+            };
+
+            let res;
+            let id;
+
+            res = await axiosInstance.post("/", data);
+            console.log(res);
+            id = res.data._id;
+
+            let li = createLi(data, id);
+
+            ul.appendChild(li);
+
+            e.target["item-name"].value = "";
+            e.target["item-description"].value = "";
+            e.target["item-price"].value = "";
+            e.target["item-qty"].value = "";
+          }
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      async function renderElements(e) {
+        try {
+          let res = await axiosInstance.get();
+
+          res.data.forEach((data) => {
+            let id = data._id;
+
+            let li = createLi(data, id);
+
+            ul.appendChild(li);
+          });
+        } catch (e) {
+          console.log(e);
+        }
+      }
+
+      async function handleClick(e) {
+        try {
+          if (
+            e.target.classList.contains("buy1") ||
+            e.target.classList.contains("buy2") ||
+            e.target.classList.contains("buy3")
+          ) {
+            const buyQty = Number(e.target.textContent.substring(3));
+
+            let id = e.target.id;
+
+            let str =
+              e.target.parentNode.parentNode.firstElementChild.textContent;
+            const itemName = str.substring(12, str.indexOf("Description") - 1);
+            const desc = str.substring(
+              str.indexOf("Description") + 14,
+              str.indexOf("Price ") - 1
+            );
+            const price = Number(
+              str.substring(
+                str.indexOf("Price") + 8,
+                str.indexOf("Quantity ") - 1
               )
-              .then((res) => {
-                console.log(res);
-              })
-              .catch((error) => {
-                console.log(error);
-              });
-          });
-      }
+            );
 
-      function Buy2(itemId) {
-        axios
-          .get(
-            `https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData/${itemId}`
-          )
-          .then((res) => {
-            let pureData = res.data;
-            axios
-              .put(
-                `https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData/${itemId}`,
-                {
-                  Iname: pureData.Iname,
-                  Description: pureData.Description,
-                  price: pureData.price,
-                  Quantity: parseInt(pureData.Quantity) - 2,
-                }
-              )
-              .then((res) => {
-                console.log(res);
-              })
-              .catch((error) => {
-                console.log(error);
-              });
-          });
-      }
+            const itemQty = Number(
+              e.target.parentNode.parentNode.firstElementChild
+                .nextElementSibling.textContent
+            );
 
-      function Buy3(itemId) {
-        axios
-          .get(
-            `https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData/${itemId}`
-          )
-          .then((res) => {
-            let pureData = res.data;
-            axios
-              .put(
-                `https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData/${itemId}`,
-                {
-                  Iname: pureData.Iname,
-                  Description: pureData.Description,
-                  price: pureData.price,
-                  Quantity: parseInt(pureData.Quantity) - 3,
-                }
-              )
-              .then((res) => {
-                console.log(res);
-              })
-              .catch((error) => {
-                console.log(error);
-              });
-          });
-      }
+            if (itemQty < buyQty) alert(`quantity less than ${buyQty}`);
+            else {
+              const data = {
+                "item-name": itemName,
+                "item-description": desc,
+                "item-price": price,
+                "item-qty": itemQty - buyQty,
+              };
 
-      function deletes(itemId) {
-        axios
-          .delete(
-            `https://crudcrud.com/api/127c7b22be4d4400a93bf9e5b8956b64/appointmentData/${itemId}`
-          )
-          .then((res) => {
-            removeItemFromScreen(itemId);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
-      }
-
-      function removeItemFromScreen(itemId) {
-        let ele = document.getElementById(itemId);
-        if (ele) {
-          ele.remove();
+              let res = await axiosInstance.put(`/${id}`, data);
+              if (res.status === 200) {
+                e.target.parentNode.parentNode.firstElementChild.nextElementSibling.textContent = `${data["item-qty"]}`;
+              }
+              if (data["item-qty"] === 0) {
+                let del = await axiosInstance.delete(`/${id}`);
+                if (del.status === 200)
+                  ul.removeChild(e.target.parentNode.parentNode);
+              }
+            }
+          }
+        } catch (e) {
+          console.log(e);
         }
       }
     </script>
